@@ -3,10 +3,12 @@
 FGraph: A proposed variation of Space Syntax's JGraph where the network is visualized in a force-directed layout instead of its justified form (tree hierachy from root node).
 
 <p float="left">
-<img height = "500" src=https://github.com/RyanTanYiWei/FGraph/blob/main/png/FGraph_btw.png/>
-<img height = "500" src=https://github.com/RyanTanYiWei/FGraph/blob/main/png/FGraph_cls.png/>
-<img height = "500" src=https://github.com/RyanTanYiWei/FGraph/blob/main/png/FGraph_deg.png/>
-<img height = "500" src=https://github.com/RyanTanYiWei/FGraph/blob/main/png/FGraph_eig.png/>
+<img height = "300" src=https://github.com/RyanTanYiWei/FGraph/blob/main/png/FGraph_btw.png/>
+<img height = "300" src=https://github.com/RyanTanYiWei/FGraph/blob/main/png/FGraph_cls.png/>
+</p>
+<p float="left">
+<img height = "300" src=https://github.com/RyanTanYiWei/FGraph/blob/main/png/FGraph_deg.png/>
+<img height = "300" src=https://github.com/RyanTanYiWei/FGraph/blob/main/png/FGraph_eig.png/>
 </p>
 
 **Hypothesis of Centrality Measures:**
