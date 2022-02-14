@@ -1,0 +1,216 @@
+---
+title: "FGraph"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+Clear 
+```{r}
+rm(list = ls())
+```
+
+
+```{r setup}
+#install.packages("remotes")
+#Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
+#remotes::install_github("orange-vertex/rdepthmap")
+library(rdepthmap)
+library(rgeos)
+library(rgdal)
+library(maptools)
+library(devtools)
+library(dplyr)
+library(tidyverse)
+library(sjmisc)
+library(seqHMM) 
+library(ggplot2)
+library(spatstat)
+library(reshape2)
+library(networkD3)
+library(xml2)
+library(rvest)
+library(tidyverse)  
+library(stringr)   
+library(lubridate)
+library(data.table)
+library(network)
+library(sjmisc)
+library(igraph)
+
+#install.packages("https://cran.r-project.org/src/contrib/rlang_0.4.11.tar.gz", repos = NULL, type="source")
+
+```
+
+
+#Read Data
+```{r include=FALSE}
+data_ = read.csv("Data/Connectivity_6.3.csv") %>% filter (status == "Old") %>% filter (weight == 1) 
+data = data_ %>% filter (weight == 1) %>% select(source,target,weight,directed)
+
+
+newdata_ = read.csv("Data/Connectivity_6.3.csv") %>% filter (weight == 1) 
+```
+
+#Network by Block
+```{r eval=FALSE, fig.asp=, fig.length=50, fig.width=50, include=FALSE}
+
+g1 <- graph_from_data_frame(d=newdata_,directed = FALSE)
+l = layout_as_tree(g1,flip.y=TRUE,root= "(A2) Main Lobby L2", circular = TRUE)
+
+#plot(g1,layout=l, Vertex.label = NA)
+
+#Edge Color
+E(g1)$color <- 'black'
+E(g1)$color[E(g1)$BlockConn != "-"] <- 'orange'
+E(g1)$color[E(g1)$Staircase != "-"] <- 'orange'
+
+#Node Color 
+a = grep("(A1)|(A2)|(A3)|(A4)|(A5)|(A6)",V(g1)$name)
+b = grep("(B1)|(B2)|(B3)|(B4)|(B5)|(B6)",V(g1)$name)
+c = grep("(C1)|(C2)|(C3)|(C4)|(C5)|(C6)",V(g1)$name)
+d = grep("(D1)|(D2)|(D3)|(D4)|(D5)|(D6)",V(g1)$name)
+e = grep("(E1)|(E2)|(E3)|(E4)|(E5)|(E6)",V(g1)$name)
+w = grep("(W1)|(W2)|(W3)|(W4)|(W5)|(W6)",V(g1)$name)
+entrance = grep("Visitor Car|Drop-Off|Drop|Sheltered" ,V(g1)$name)
+
+
+V(g1)$color<-"black"
+V(g1)[a]$color<-"red"
+V(g1)[b]$color<-"mediumpurple3"
+V(g1)[c]$color<-"deepskyblue3"
+V(g1)[d]$color<-"orange"
+V(g1)[e]$color<-"hotpink2"
+V(g1)[w]$color<-"olivedrab3"
+V(g1)[entrance]$color<-"black"
+
+```
+
+
+#Calculate Centrality Measures
+```{r eval=FALSE, fig.asp=, fig.length=50, fig.width=50, include=FALSE}
+
+#extract centrality measures     
+btw = betweenness(g1, v = V(g1), directed = FALSE, weights = NULL,
+  nobigint = TRUE, normalized = TRUE)
+cls = closeness(g1, v = V(g1), weights = NULL, normalized = TRUE)
+deg = degree(g1)
+eig = evcent(g1)$vector
+
+#create dataframe
+btw_df = as.data.frame(btw)
+cls_df = as.data.frame(cls)
+deg_df = as.data.frame(deg)
+eig_df = as.data.frame(eig)
+
+#bind dataframes
+cent_df = setNames(cbind(rownames(btw_df), btw_df, cls_df, deg_df, eig_df, row.names = NULL), 
+         c("Name", "Betweenness", "Closeness","Degree","Eigenvector"))
+
+```
+
+
+1) Betweeness - Spaces with greatest potential for Through Movements (Spine)
+2) Closeness - Spaces that are Easiest to Reach (Physical Centres)
+3) Degree - Local Connectivity (Hallways)
+4) Eigenvector - Spaces which are connected to more other Important Spaces (Hierachy of Spaces)
+
+#Plot All Centralities
+```{r eval=FALSE, fig.asp=, fig.length=50, fig.width=50, include=FALSE}
+#betweeness
+plot.btw = function(){
+  nsize.btw <-setNames((cent_df$Betweenness+0.03)*30,cent_df$name)
+  plot(g1, layout = layout_with_kk(g1)*0.7, label.cex = 0.5, vertex.size = nsize.btw, vertex.label.color = "darkgrey") + 
+    title("Betweenness Centrality", cex.main = 5, line = -5, adj = 0.1)
+  legend("bottomright", legend = c("Block A", "Block B", "Block C", "Block D", "Block E", "Block W", "Same Floor Connections", "Stairs and Bridges"), 
+       col = c("red", "mediumpurple3", "deepskyblue3", "orange", "hotpink2", "olivedrab3", "black","orange"), 
+       lty = c(NA,NA,NA,NA,NA,NA,1,1), 
+       pch = c(19,19,19,19,19,19,NA,NA),
+       lwd = 2, cex = 3, bty = "n" )
+}
+
+#closeness (physical centre)
+plot.cls = function(){
+  nsize.cls <-setNames( ((cent_df$Closeness)^3)*2000,cent_df$name)
+  plot(g1, layout = layout_with_kk(g1)*0.7, label.cex = 0.5, vertex.size = nsize.cls, vertex.label.color = "darkgrey") + 
+    title("Closeness Centrality", cex.main = 5, line = -5, adj = 0.1)
+  legend("bottomright", legend = c("Block A", "Block B", "Block C", "Block D", "Block E", "Block W", "Same Floor Connections", "Stairs and Bridges"), 
+       col = c("red", "mediumpurple3", "deepskyblue3", "orange", "hotpink2", "olivedrab3", "black","orange"), 
+       lty = c(NA,NA,NA,NA,NA,NA,1,1), 
+       pch = c(19,19,19,19,19,19,NA,NA),
+       lwd = 2, cex = 3, bty = "n" )
+}
+
+#degree (central corridors)
+plot.deg = function(){
+  nsize.deg <-setNames(cent_df$Degree/2,cent_df$name)
+  plot(g1, layout = layout_with_kk(g1)*0.7, label.cex = 0.5, vertex.size = nsize.deg, vertex.label.color = "darkgrey") + 
+    title("Degree Centrality", cex.main = 5, line = -5, adj = 0.1)
+  legend("bottomright", legend = c("Block A", "Block B", "Block C", "Block D", "Block E", "Block W", "Same Floor Connections", "Stairs and Bridges"), 
+       col = c("red", "mediumpurple3", "deepskyblue3", "orange", "hotpink2", "olivedrab3", "black","orange"), 
+       lty = c(NA,NA,NA,NA,NA,NA,1,1), 
+       pch = c(19,19,19,19,19,19,NA,NA),
+       lwd = 2, cex = 3, bty = "n" )
+}
+
+#eigenvector (heirachy of spaces, most prime areas)
+plot.eig = function(){
+  nsize.eig <-setNames( ((cent_df$Eigenvector)^0.8)*8,cent_df$name)
+  plot(g1, layout = layout_with_kk(g1)*0.7, label.cex = 0.5, vertex.size = nsize.eig, vertex.label.color = "darkgrey") + 
+    title("Eigenvector Centrality", cex.main = 5, line = -5, adj = 0.1)
+  legend("bottomright", legend = c("Block A", "Block B", "Block C", "Block D", "Block E", "Block W", "Same Floor Connections", "Stairs and Bridges"), 
+       col = c("red", "mediumpurple3", "deepskyblue3", "orange", "hotpink2", "olivedrab3", "black","orange"), 
+       lty = c(NA,NA,NA,NA,NA,NA,1,1), 
+       pch = c(19,19,19,19,19,19,NA,NA),
+       lwd = 2, cex = 3, bty = "n" )
+}
+
+```
+
+
+#save diagrams (high res)
+```{r}
+tiff(filename="tiff/FGraph_btw.tiff", width=10, height=10, units="in",
+     pointsize=4, compression="lzw", bg="white", res=600,
+     restoreConsole=TRUE)
+plot.btw()
+dev.off()
+
+tiff(filename="tiff/FGraph_cls.tiff", width=10, height=10, units="in",
+     pointsize=4, compression="lzw", bg="white", res=600,
+     restoreConsole=TRUE)
+plot.cls()
+dev.off()
+
+tiff(filename="tiff/FGraph_deg.tiff", width=10, height=10, units="in",
+     pointsize=4, compression="lzw", bg="white", res=600,
+     restoreConsole=TRUE)
+plot.deg()
+dev.off()
+
+tiff(filename="tiff/FGraph_eig.tiff", width=10, height=10, units="in",
+     pointsize=4, compression="lzw", bg="white", res=600,
+     restoreConsole=TRUE)
+plot.eig()
+dev.off()
+```
+
+#save diagrams (png lower res)
+```{r}
+png(filename="png/FGraph_btw.png", width=3000, height=3000, bg="white", res=300, pointsize=4)
+plot.btw()
+dev.off()
+
+png(filename="png/FGraph_cls.png", width=3000, height=3000, bg="white", res=300, pointsize=4)
+plot.cls()
+dev.off()
+
+png(filename="png/FGraph_deg.png", width=3000, height=3000, bg="white", res=300, pointsize=4)
+plot.deg()
+dev.off()
+
+png(filename="png/FGraph_eig.png", width=3000, height=3000, bg="white", res=300, pointsize=4)
+plot.eig()
+dev.off()
+```
