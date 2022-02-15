@@ -45,7 +45,7 @@ library(igraph)
 
 
 #Read Data
-```{r include=FALSE}
+```{r}
 data_ = read.csv("Data/Connectivity_6.3.csv") %>% filter (status == "Old") %>% filter (weight == 1) 
 data = data_ %>% filter (weight == 1) %>% select(source,target,weight,directed)
 
@@ -54,7 +54,7 @@ newdata_ = read.csv("Data/Connectivity_6.3.csv") %>% filter (weight == 1)
 ```
 
 #Network by Block
-```{r eval=FALSE, fig.asp=, fig.length=50, fig.width=50, include=FALSE}
+```{r}
 
 g1 <- graph_from_data_frame(d=newdata_,directed = FALSE)
 l = layout_as_tree(g1,flip.y=TRUE,root= "(A2) Main Lobby L2", circular = TRUE)
@@ -89,7 +89,7 @@ V(g1)[entrance]$color<-"black"
 
 
 #Calculate Centrality Measures
-```{r eval=FALSE, fig.asp=, fig.length=50, fig.width=50, include=FALSE}
+```{r}
 
 #extract centrality measures     
 btw = betweenness(g1, v = V(g1), directed = FALSE, weights = NULL,
@@ -117,7 +117,7 @@ cent_df = setNames(cbind(rownames(btw_df), btw_df, cls_df, deg_df, eig_df, row.n
 4) Eigenvector - Spaces which are connected to more other Important Spaces (Hierachy of Spaces)
 
 #Plot All Centralities
-```{r eval=FALSE, fig.asp=, fig.length=50, fig.width=50, include=FALSE}
+```{r}
 #betweeness
 plot.btw = function(){
   nsize.btw <-setNames((cent_df$Betweenness+0.03)*30,cent_df$name)
